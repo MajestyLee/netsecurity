@@ -14,36 +14,32 @@ class EchoServerClientProtocol(asyncio.Protocol):
         # self.Packet = Packet
         # self.loop = loop
         self.transport = None
+        self.status = 0
     def connection_made(self, transport):
         # peername = transport.get_extra_info('peername')
         # print('Connection from {}'.format(peername))
         self.transport = transport
         self._deserializer = PacketType.Deserializer()
     def data_received(self, data):
-        packet1 = lab_1_Packet.RequestConvert()
-        packet3 = lab_1_Packet.ConvertAnswer()
-        packet3.ID = 1
-        packet3.Value = "12"
-        packet3.numType = "INT"
         self._deserializer.update(data)
         for pkt in self._deserializer.nextPackets():
-            if isinstance(pkt, lab_1_Packet.ConvertAnswer):
+            if isinstance(pkt, lab_1_Packet.RequestConvert) and self.status == 0:
+                self.status += 1
+                print("Data received request")
+            elif isinstance(pkt, lab_1_Packet.ConvertAnswer) and self.status == 1:
+                # self.status += 1
                 print('Data received: {!r}'.format(pkt.Value + " " + pkt.numType))
-            elif isinstance(pkt, lab_1_Packet.Result):
-                print('Data received: {!r}'.format(pkt.Judge))
-            elif isinstance(pkt, lab_1_Packet.RequestConvert):
-                print('Data received: {!r}'.format("request"))
             else:
-                print("unknown received packet")
-            # print('Data received: {!r}'.format(ppkktt))
-        if isinstance(pkt, lab_1_Packet.RequestConvert):
+                print("error")
+                self.transport = None
+        if isinstance(pkt, lab_1_Packet.RequestConvert) and self.status == 1:
             Packet = lab_1_Packet.ConvertAnswer()
             Packet.ID = 1
             Packet.Value = "XII"
             Packet.numType = "ROMAN"
             print('Server Send: {!r}'.format(Packet.Value + " " + Packet.numType))
             self.transport.write(Packet.__serialize__())
-        elif isinstance(pkt, lab_1_Packet.ConvertAnswer):
+        elif isinstance(pkt, lab_1_Packet.ConvertAnswer) and self.status == 1:
             packet4 = lab_1_Packet.Result()
             packet4.ID = 1
             if str(self.romanToInt(self, "XII")) == pkt.Value:
@@ -55,7 +51,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 print('Server Send: {!r}'.format(packet4.Judge))
                 self.transport.write(packet4.__serialize__())
         else:
-            print ("error and do not return to the client")
+            pass
     def connection_lost(self, exc):
         self.transport = None
         print('Echo Server Connection Lost because {!r}'.format(exc))
@@ -76,21 +72,3 @@ class EchoServerClientProtocol(asyncio.Protocol):
             else:
                 summary += buff_dict[s[i]]
         return summary + buff_dict[s[len(s)-1]] # add the last
-        # print('Close the client socket')
-        # self.transport.close()
-# loop = asyncio.get_event_loop()
-# Each client connection will create a new protocol instance
-# coro = loop.create_server(EchoServerClientProtocol, '127.0.0.1', 8888)
-# server = loop.run_until_complete(coro)
-
-# # Serve requests until Ctrl+C is pressed
-# print('Serving on {}'.format(server.sockets[0].getsockname()))
-# try:
-#     loop.run_forever()
-# except KeyboardInterrupt:
-#     pass
-
-# Close the server
-# server.close()
-# loop.run_until_complete(server.wait_closed())
-# loop.close()
