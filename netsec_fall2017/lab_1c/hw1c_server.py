@@ -27,7 +27,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 self.status += 1
                 print("Data received request")
             elif isinstance(pkt, lab_1_Packet.ConvertAnswer) and self.status == 1:
-                # self.status += 1
+                self.status += 1
                 print('Data received: {!r}'.format(pkt.Value + " " + pkt.numType))
             else:
                 print("error")
@@ -39,7 +39,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
             Packet.numType = "ROMAN"
             print('Server Send: {!r}'.format(Packet.Value + " " + Packet.numType))
             self.transport.write(Packet.__serialize__())
-        elif isinstance(pkt, lab_1_Packet.ConvertAnswer) and self.status == 1:
+        elif isinstance(pkt, lab_1_Packet.ConvertAnswer) and self.status == 2:
             packet4 = lab_1_Packet.Result()
             packet4.ID = 1
             if str(self.romanToInt(self, "XII")) == pkt.Value:

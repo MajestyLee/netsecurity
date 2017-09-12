@@ -39,15 +39,19 @@ def basicUnitTest(): # test the loop instead of testloop
     Packet.Value = "12"
     Packet.numType = "INT"
     client.SendData(Packet)
-    assert client.status == 1
-    assert server.status == 1
+    assert client.status == 2
+    assert server.status == 2
     Packet = lab_1_Packet.ConvertAnswer()
     Packet.ID = 1
     Packet.Value = "15"
     Packet.numType = "INT"
     client.SendData(Packet)
-    assert client.status == 1
-    assert server.status == 1
+    assert client.status == 2
+    assert server.status == 2
+    Packet = lab_1_Packet.RequestConvert()
+    client.SendData(Packet)
+    assert client.status == 2
+    assert server.status == 2
 def basicUnitTest_2():
     loop = asyncio.set_event_loop(TestLoopEx())
     client = hw1c_client.EchoClinetProtocol(loop)

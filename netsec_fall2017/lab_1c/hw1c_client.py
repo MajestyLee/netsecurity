@@ -26,7 +26,7 @@ class EchoClinetProtocol(asyncio.Protocol):
             elif isinstance(pkt, lab_1_Packet.Result) and self.status == 1:
                 # print(pkt)
                 print('Data received: {!r}'.format(pkt.Judge))
-                # self.status += 1
+                self.status += 1
             else:
                 # print(pkt.Judge)
                 print('Data received: {!r}'.format(pkt))  
@@ -38,8 +38,9 @@ class EchoClinetProtocol(asyncio.Protocol):
     def SendData(self, answer):
         if isinstance(answer, lab_1_Packet.ConvertAnswer) and self.status == 1:
             print('Data sent: {!r}'.format(answer.Value + " " + answer.numType))
+            self.transport.write(answer.__serialize__())
         elif isinstance(answer, lab_1_Packet.RequestConvert) and self.status == 0:
             print('Data sent: {!r}'.format("request"))
+            self.transport.write(answer.__serialize__())
         else:
             print('sent a wrong packet')
-        self.transport.write(answer.__serialize__())
