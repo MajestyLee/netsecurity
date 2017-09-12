@@ -1,5 +1,6 @@
 #!/usr/bin/python3
-#made by libinjie 09/08/2017, for unit testing client and server
+#upadated by libinjie 09/11/2017, for unit testing client and server
+#status = 0,present the protocal does not start, status = 1, complete the first connection, status, complete the second connection
 from playground.network.packet import PacketType
 from playground.network.packet.fieldtypes import UINT32, STRING, ListFieldType, BOOL
 from playground.asyncio_lib.testing import TestLoopEx

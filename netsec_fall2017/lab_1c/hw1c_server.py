@@ -11,13 +11,9 @@ from playground.network.packet import PacketType
 from playground.network.packet.fieldtypes import UINT32, STRING, ListFieldType, BOOL
 class EchoServerClientProtocol(asyncio.Protocol):
     def __init__(self):
-        # self.Packet = Packet
-        # self.loop = loop
         self.transport = None
         self.status = 0
     def connection_made(self, transport):
-        # peername = transport.get_extra_info('peername')
-        # print('Connection from {}'.format(peername))
         self.transport = transport
         self._deserializer = PacketType.Deserializer()
     def data_received(self, data):
@@ -25,33 +21,29 @@ class EchoServerClientProtocol(asyncio.Protocol):
         for pkt in self._deserializer.nextPackets():
             if isinstance(pkt, lab_1_Packet.RequestConvert) and self.status == 0:
                 self.status += 1
+                Packet = lab_1_Packet.ConvertAnswer()
+                Packet.ID = 1
+                Packet.Value = "XII"
+                Packet.numType = "ROMAN"
+                print('Server Send: {!r}'.format(Packet.Value + " " + Packet.numType))
+                self.transport.write(Packet.__serialize__())
                 print("Data received request")
             elif isinstance(pkt, lab_1_Packet.ConvertAnswer) and self.status == 1:
                 self.status += 1
                 print('Data received: {!r}'.format(pkt.Value + " " + pkt.numType))
+                packet4 = lab_1_Packet.Result()
+                packet4.ID = 1
+                if str(self.romanToInt(self, "XII")) == pkt.Value:
+                    packet4.Judge = "Success"
+                    print('Server Send: {!r}'.format(packet4.Judge))
+                    self.transport.write(packet4.__serialize__())
+                else:
+                    packet4.Judge = "Fail"
+                    print('Server Send: {!r}'.format(packet4.Judge))
+                    self.transport.write(packet4.__serialize__())
             else:
                 print("error")
                 self.transport = None
-        if isinstance(pkt, lab_1_Packet.RequestConvert) and self.status == 1:
-            Packet = lab_1_Packet.ConvertAnswer()
-            Packet.ID = 1
-            Packet.Value = "XII"
-            Packet.numType = "ROMAN"
-            print('Server Send: {!r}'.format(Packet.Value + " " + Packet.numType))
-            self.transport.write(Packet.__serialize__())
-        elif isinstance(pkt, lab_1_Packet.ConvertAnswer) and self.status == 2:
-            packet4 = lab_1_Packet.Result()
-            packet4.ID = 1
-            if str(self.romanToInt(self, "XII")) == pkt.Value:
-                packet4.Judge = "Success"
-                print('Server Send: {!r}'.format(packet4.Judge))
-                self.transport.write(packet4.__serialize__())
-            else:
-                packet4.Judge = "Fail"
-                print('Server Send: {!r}'.format(packet4.Judge))
-                self.transport.write(packet4.__serialize__())
-        else:
-            pass
     def connection_lost(self, exc):
         self.transport = None
         print('Echo Server Connection Lost because {!r}'.format(exc))
