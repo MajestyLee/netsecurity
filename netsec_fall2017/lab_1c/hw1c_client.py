@@ -9,10 +9,10 @@ import lab_1_Packet.Result
 from playground.network.packet import PacketType
 from playground.network.packet.fieldtypes import UINT32, STRING, ListFieldType, BOOL
 class EchoClinetProtocol(asyncio.Protocol):
-    def __init__(self, loop):
+    def __init__(self):
         self.status = 0
-        self.loop = loop
-        self.transport = None
+        # self.loop = loop
+        # self.transport = None
     def connection_made(self, transport):
         self.transport = transport
         self._deserializer = PacketType.Deserializer()
@@ -31,16 +31,15 @@ class EchoClinetProtocol(asyncio.Protocol):
                 # print(pkt.Judge)
                 print('Data received: {!r}'.format(pkt))  
     def connection_lost(self, exc):
-        self.transport = None
+        self.transport.close()
         print('The server closed the connection')
         print('Stop the event loop')
-        self.loop.stop()
+        # self.loop.stop()
     def SendData(self, answer):
         if isinstance(answer, lab_1_Packet.ConvertAnswer) and self.status == 1:
             print('Data sent: {!r}'.format(answer.Value + " " + answer.numType))
         elif isinstance(answer, lab_1_Packet.RequestConvert) and self.status == 0:
             print('Data sent: {!r}'.format("request"))
         else:
-            pass
-            # print('sent a wrong packet')
+            print('sent a wrong packet')
         self.transport.write(answer.__serialize__())

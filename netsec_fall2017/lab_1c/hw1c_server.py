@@ -11,14 +11,17 @@ from playground.network.packet import PacketType
 from playground.network.packet.fieldtypes import UINT32, STRING, ListFieldType, BOOL
 class EchoServerClientProtocol(asyncio.Protocol):
     def __init__(self):
-        self.transport = None
+        # self.transport = None
         self.status = 0
     def connection_made(self, transport):
         self.transport = transport
         self._deserializer = PacketType.Deserializer()
+        # print("connection ok")
     def data_received(self, data):
+        # print("ok")
         self._deserializer.update(data)
         for pkt in self._deserializer.nextPackets():
+            # print(pkt)
             if isinstance(pkt, lab_1_Packet.RequestConvert) and self.status == 0:
                 self.status += 1
                 Packet = lab_1_Packet.ConvertAnswer()
@@ -43,9 +46,9 @@ class EchoServerClientProtocol(asyncio.Protocol):
                     self.transport.write(packet4.__serialize__())
             else:
                 print("error")
-                self.transport = None
+                self.transport.close()
     def connection_lost(self, exc):
-        self.transport = None
+        self.transport.close()
         print('Echo Server Connection Lost because {!r}'.format(exc))
     @staticmethod
     def romanToInt(self, s): # judge if the result is right
