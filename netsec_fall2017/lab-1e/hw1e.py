@@ -1,7 +1,8 @@
 import sys, time, os, logging, asyncio
 import playground
 from playground.asyncio_lib.testing import TestLoopEx
-from playground.network.common import PlaygroundAddress
+from playground.network.common import *
+from playground.network.devices import *
 sys.path.append("..")
 import lab_1_Packet.RequestConvert
 import lab_1_Packet.ConvertAnswer
@@ -112,15 +113,8 @@ class EchoClinetProtocol(asyncio.Protocol):
             Packet.ID = 1
             Packet.Value = answer
             Packet.numType = "INT"
-            # print("sendanswer")
             self.transport.write(Packet.__serialize__())
-        # if isinstance(answer, lab_1_Packet.ConvertAnswer) and self.status == 1:
-        #     print('Data sent: {!r}'.format(answer.Value + " " + answer.numType))
-        # elif isinstance(answer, lab_1_Packet.RequestConvert) and self.status == 0:
-        #     print('Data sent: {!r}'.format("request"))
-        # else:
-        #     print('sent a wrong packet')
-        # self.transport.write(answer.__serialize__())
+
 class EchoControl:
     def __init__(self):
         self.txProtocol = None
@@ -143,12 +137,43 @@ class EchoControl:
             # print("input ok")
             data = data[:-1] # strip off \n
         self.txProtocol.SendData(data)
+class clientpassthrough(StackingProtocol):
+    def __init__(self):
+        super().__init__
+    def data_received(self, data):
+        print("psclient received")
+        self.higherProtocol().data_received(data)
+    def connection_made(self, transport):
+        print("psclient con made")
+        self.transport = transport
+        self.higherProtocol().connection_made(StackingTransport(self.transport))
+        # self.higherProtocol.transport = transport
+    def connection_lost(self, exc):
+        print("psclient con lost")
+        self.transport.close()
+        self.higherProtocol().transport.close()
+class serverpassthrough(StackingProtocol):
+    def __init__(self):
+        super().__init__
+    def data_received(self, data):
+        print("server received")
+        self.higherProtocol().data_received(data)
+    def connection_made(self, transport):
+        print("server con made")
+        self.transport = transport
+        self.higherProtocol().connection_made(StackingTransport(self.transport))
+        # self.higherProtocol.transport = transport
+    def connection_lost(self, exc):
+        print("server con lost")
+        self.transport.close()
+        self.higherProtocol().transport.close()
+    # def SendData(self, data):
+    #     self.higherProtocol().SendData(data)
 USAGE = """usage: echotest <mode>
   mode is either 'server' or a server's address (client mode)"""
 
 if __name__=="__main__":
     echoArgs = {}
-    
     args= sys.argv[1:]
     i = 0
     for arg in args:
@@ -164,10 +189,11 @@ if __name__=="__main__":
 
     mode = echoArgs[0]
     loop = asyncio.get_event_loop()
-    loop.set_debug(enabled=True)
-    
+    f = StackingProtocolFactory(lambda: clientpassthrough(),lambda: Serverpassthrough())
+    ptConnector = playground.Connector(protocolStack=f)
+    playground.setConnector("passthrough", ptConnector)
     if mode.lower() == "server":
-        coro = playground.getConnector().create_playground_server(lambda: EchoServerProtocol(), 721)
+        coro = playground.getConnector('passthrough').create_playground_server(lambda: EchoServerProtocol(), 726)
         server = loop.run_until_complete(coro)
         print("Echo Server Started at {}".format(server.sockets[0].gethostname()))
         try:
@@ -180,7 +206,7 @@ if __name__=="__main__":
     else:
         remoteAddress = mode
         control = EchoControl()
-        coro = playground.getConnector().create_playground_connection(control.buildProtocol, remoteAddress, 721)
+        coro = playground.getConnector().create_playground_connection(control.buildProtocol, remoteAddress, 726)
         transport, protocol = loop.run_until_complete(coro)
         print("Echo Client Connected. Starting UI t:{}. p:{}".format(transport, protocol))
         loop.add_reader(sys.stdin, control.stdinAlert)
