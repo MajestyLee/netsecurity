@@ -96,12 +96,12 @@ class EchoClinetProtocol(asyncio.Protocol):
                 self.status += 1
             else:
                 # print(pkt.Judge)
-                print('Data received: {!r}'.format(pkt))  
+                print('Data received: {!r}'.format(pkt))
     def connection_lost(self, exc):
         self.transport.close()
         print('The server closed the connection')
         print('Stop the event loop')
-        # self.loop.stop()
+    # self.loop.stop()
     def SendData(self, answer):
         if answer == 'request':
             print("request")
@@ -118,59 +118,59 @@ class EchoClinetProtocol(asyncio.Protocol):
 class EchoControl:
     def __init__(self):
         self.txProtocol = None
-        
+    
     def buildProtocol(self):
         return EchoClinetProtocol(self.callback)
-        
+    
     def connect(self, txProtocol):
         self.txProtocol = txProtocol
         print("Echo Connection to Server Established!")
-        # self.txProtocol = txProtocol
-        # print("Enter Message: ", end="")
-        
+    # self.txProtocol = txProtocol
+    # print("Enter Message: ", end="")
+    
     def callback(self, message):
         print("Server Response: {}".format(message))
-        
+    
     def stdinAlert(self):
         data = sys.stdin.readline()
         if data and data[-1] == "\n":
             # print("input ok")
             data = data[:-1] # strip off \n
         self.txProtocol.SendData(data)
-class clientpassthrough(StackingProtocol):
+class passthrough_1(StackingProtocol):
     def __init__(self):
         super().__init__
     def data_received(self, data):
-        print("psclient received")
+        print("ps1 received")
         self.higherProtocol().data_received(data)
     def connection_made(self, transport):
-        print("psclient con made")
+        print("ps1 con made")
         self.transport = transport
         self.higherProtocol().connection_made(StackingTransport(self.transport))
-        # self.higherProtocol.transport = transport
+    # self.higherProtocol.transport = transport
     def connection_lost(self, exc):
-        print("psclient con lost")
+        print("ps1 con lost")
         self.transport.close()
         self.higherProtocol().transport.close()
-class serverpassthrough(StackingProtocol):
+class passthrough_2(StackingProtocol):
     def __init__(self):
         super().__init__
     def data_received(self, data):
-        print("server received")
+        print("ps2 received")
         self.higherProtocol().data_received(data)
     def connection_made(self, transport):
-        print("server con made")
+        print("ps2 con made")
         self.transport = transport
         self.higherProtocol().connection_made(StackingTransport(self.transport))
-        # self.higherProtocol.transport = transport
+    # self.higherProtocol.transport = transport
     def connection_lost(self, exc):
-        print("server con lost")
+        print("ps2 con lost")
         self.transport.close()
         self.higherProtocol().transport.close()
-    # def SendData(self, data):
-    #     self.higherProtocol().SendData(data)
+# def SendData(self, data):
+#     self.higherProtocol().SendData(data)
 USAGE = """usage: echotest <mode>
-  mode is either 'server' or a server's address (client mode)"""
+    mode is either 'server' or a server's address (client mode)"""
 
 if __name__=="__main__":
     echoArgs = {}
@@ -186,10 +186,10 @@ if __name__=="__main__":
     
     if not 0 in echoArgs:
         sys.exit(USAGE)
-
+    
     mode = echoArgs[0]
     loop = asyncio.get_event_loop()
-    f = StackingProtocolFactory(lambda: clientpassthrough(),lambda: Serverpassthrough())
+    f = StackingProtocolFactory(lambda: passthrough_1(),lambda: passthrough_2())
     ptConnector = playground.Connector(protocolStack=f)
     playground.setConnector("passthrough", ptConnector)
     if mode.lower() == "server":
@@ -201,8 +201,8 @@ if __name__=="__main__":
         except KeyboardInterrupt:
             pass
         loop.close()
-        
-        
+    
+    
     else:
         remoteAddress = mode
         control = EchoControl()
