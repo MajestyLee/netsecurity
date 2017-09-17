@@ -206,7 +206,7 @@ if __name__=="__main__":
     else:
         remoteAddress = mode
         control = EchoControl()
-        coro = playground.getConnector().create_playground_connection(control.buildProtocol, remoteAddress, 726)
+        coro = playground.getConnector('passthrough').create_playground_connection(control.buildProtocol, remoteAddress, 726)
         transport, protocol = loop.run_until_complete(coro)
         print("Echo Client Connected. Starting UI t:{}. p:{}".format(transport, protocol))
         loop.add_reader(sys.stdin, control.stdinAlert)
